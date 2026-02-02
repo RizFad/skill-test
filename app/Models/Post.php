@@ -2,7 +2,6 @@
 
 namespace App\Models;
 
-use App\Models\User;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 
@@ -10,6 +9,7 @@ class Post extends Model
 {
     /** @use HasFactory<\Database\Factories\UserFactory> */
     use HasFactory;
+
     protected $fillable = [
         'title',
         'content',
@@ -26,5 +26,21 @@ class Post extends Model
     public function user()
     {
         return $this->belongsTo(User::class);
+    }
+
+    public function scopeActive(Builder $query): Builder
+    {
+        return $query
+            ->where('is_draft', false)
+            ->whereNotNull('published_at')
+            ->where('published_at', '<=', now());
+    }
+
+    protected function isActive(): Attribute
+    {
+        return Attribute::get(fn () => ! $this->is_draft &&
+            $this->published_at !== null &&
+            $this->published_at->isPast()
+        );
     }
 }

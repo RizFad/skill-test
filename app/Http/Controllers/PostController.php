@@ -14,12 +14,9 @@ class PostController extends Controller
      */
     public function index()
     {
-        Post::with('user')
-            ->where('is_draft', false)
-            ->where(function ($q) {
-                $q->whereNull('published_at')
-                    ->orWhere('published_at', '<=', now());
-            })->paginate(20);
+        $posts = Post::with('user')
+            ->active()
+            ->paginate(20);
 
         return PostResource::collection($posts);
     }
@@ -39,8 +36,8 @@ class PostController extends Controller
     {
         $post = Post::create([
             ...$request->validated(),
-            'user_id' => auth()->id(),
-        ]);
+            'user_id' => $request->user()->id,
+        ])->load('user');
 
         return response()->json(new PostResource($post), 201);
     }
@@ -50,11 +47,7 @@ class PostController extends Controller
      */
     public function show(Post $post)
     {
-        abort_if(
-            $post->is_draft ||
-            ($post->published_at !== null && $post->published_at->isFuture()),
-            404
-        );
+        abort_if(! $post->is_active, 404);
 
         return new PostResource($post->load('user'));
     }
@@ -64,8 +57,6 @@ class PostController extends Controller
      */
     public function edit(Post $post)
     {
-        $this->authorize('update', $post);
-
         return 'posts.edit';
     }
 
@@ -74,11 +65,12 @@ class PostController extends Controller
      */
     public function update(UpdatePostRequest $request, Post $post)
     {
-        $this->authorize('update', $post);
 
         $post->update($request->validated());
 
-        return response()->json(new PostResource($post));
+        return response()->json(
+            new PostResource($post->load('user'))
+        );
     }
 
     /**
@@ -86,8 +78,6 @@ class PostController extends Controller
      */
     public function destroy(Post $post)
     {
-        $this->authorize('delete', $post);
-
         $post->delete();
 
         return response()->json(null, 204);
