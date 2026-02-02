@@ -5,6 +5,7 @@ namespace App\Http\Controllers;
 use App\Http\Requests\StorePostRequest;
 use App\Http\Requests\UpdatePostRequest;
 use App\Http\Resources\PostResource;
+use App\Models\Post;
 
 class PostController extends Controller
 {
@@ -13,7 +14,12 @@ class PostController extends Controller
      */
     public function index()
     {
-        $posts = Post::with('user')->where('is_draft', false)->whereNotNull('published_at')->where('published_at', '<=', now())->paginate(20);
+        Post::with('user')
+            ->where('is_draft', false)
+            ->where(function ($q) {
+                $q->whereNull('published_at')
+                    ->orWhere('published_at', '<=', now());
+            })->paginate(20);
 
         return PostResource::collection($posts);
     }
@@ -46,7 +52,7 @@ class PostController extends Controller
     {
         abort_if(
             $post->is_draft ||
-            ($post->published_at && $post->published_at->isFuture()),
+            ($post->published_at !== null && $post->published_at->isFuture()),
             404
         );
 
