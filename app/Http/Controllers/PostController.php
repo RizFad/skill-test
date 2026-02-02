@@ -2,7 +2,9 @@
 
 namespace App\Http\Controllers;
 
-use Illuminate\Http\Request;
+use App\Http\Requests\StorePostRequest;
+use App\Http\Requests\UpdatePostRequest;
+use App\Http\Resources\PostResource;
 
 class PostController extends Controller
 {
@@ -57,6 +59,7 @@ class PostController extends Controller
     public function edit(Post $post)
     {
         $this->authorize('update', $post);
+
         return 'posts.edit';
     }
 
