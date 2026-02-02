@@ -15,12 +15,7 @@ Route::middleware('auth')->group(function () {
         return Inertia::render('dashboard');
     })->name('dashboard');
     Route::resource('posts', PostController::class)
-        ->except(['index', 'show'])
-        ->middleware([
-            'edit' => 'can:update,post',
-            'update' => 'can:update,post',
-            'destroy' => 'can:delete,post',
-        ]);
+        ->except(['index', 'show']);
 });
 
 require __DIR__.'/settings.php';

@@ -2,12 +2,13 @@
 
 namespace App\Models;
 
+use Illuminate\Database\Eloquent\Builder;
+use Illuminate\Database\Eloquent\Casts\Attribute;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 
 class Post extends Model
 {
-    /** @use HasFactory<\Database\Factories\UserFactory> */
     use HasFactory;
 
     protected $fillable = [
@@ -28,6 +29,9 @@ class Post extends Model
         return $this->belongsTo(User::class);
     }
 
+    /**
+     * Query scope for active (published) posts
+     */
     public function scopeActive(Builder $query): Builder
     {
         return $query
@@ -36,11 +40,15 @@ class Post extends Model
             ->where('published_at', '<=', now());
     }
 
-    protected function isActive(): Attribute
+    /**
+     * Laravel 12 attribute accessor
+     */
+    public function isActive(): Attribute
     {
-        return Attribute::get(fn () => ! $this->is_draft &&
-            $this->published_at !== null &&
-            $this->published_at->isPast()
+        return Attribute::make(
+            get: fn () => ! $this->is_draft &&
+                $this->published_at !== null &&
+                $this->published_at->isPast()
         );
     }
 }
